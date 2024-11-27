@@ -14,7 +14,7 @@ if [ -z "${AWS_REGION:-}" ]; then
 fi
 
 if [ -z "${RDS_USER:-}" ]; then
-  echo "RDS_HOST was not set"
+  echo "RDS_USER was not set"
 fi
 
 # if [ -z "${S3_BUCKET:-}" ]; then
@@ -37,7 +37,7 @@ fi
 echo "Printing Volume Information"
 df -h .
 
-RDS_PORT="3306"
+
 
 # get backup targets from rds cluster tags
 clusters=$(aws rds describe-db-clusters)
@@ -50,21 +50,27 @@ do
         RDS_HOST=$(echo $clusters| yq '.DBClusters[] | select(.DBClusterIdentifier == "'${cluster}'")'| yq .ReaderEndpoint)
         RDS_ENGINE=$(echo $clusters| yq '.DBClusters[] | select(.DBClusterIdentifier == "'${cluster}'")'| yq .Engine)
         
-        if [ $RDS_ENGINE == "aurora-postgresql"]; then
-            RDS_PORT="5432"
+        echo "get iam token for user ${RDS_USER} ..."
+        if [ $RDS_ENGINE == "aurora-mysql" ]; then
+            RDS_PORT="3306"
+            Databases="test"
+            #export MYSQL_PWD=$(aws rds generate-db-auth-token --hostname $RDS_HOST --port $RDS_PORT --username $RDS_USER --region $AWS_REGION)
+            #$Databases=$(mysql --user=$RDS_USER -h $RDS_HOST -e \"show databases\" --ssl-ca=\"eu-west-1-bundle.pem\" --enable-cleartext-plugin)
         fi
 
-        echo "get iam token for user ${RDS_USER} ..."
-        export PGPASSWORD=$(aws rds generate-db-auth-token --hostname ${RDS_HOST} --port ${RDS_PORT} --username ${RDS_USER} --region ${REGION})
+        if [ $RDS_ENGINE == "aurora-postgresql" ]; then
+            RDS_PORT="5432"
+            export PGPASSWORD=$(aws rds generate-db-auth-token --hostname $RDS_HOST --port $RDS_PORT --username $RDS_USER --region $AWS_REGION)
+            Databases=$( psql --username=$RDS_USER  -h $RDS_HOST -c "select datname from pg_database" -d postgres --csv)
+        fi
         
-        Databases=$( psql --username=$RDS_USER  -h $RDS_HOST -c "select datname from pg_database" -d postgres --csv)
-
+        echo $Databases
         for RDS_DATABASE in $Databases
         do
             FILENAME=${RDS_DATABASE}_$(date +"%Y-%m-%dT%H:%M:%SZ")
             echo "Using Filename: ${FILENAME}"
 
-            if [ $RDS_ENGINE == "aurora-postgresql"]; then
+            if [ $RDS_ENGINE == "aurora-postgresql" ]; then
                 echo "Start dump.."
                 echo "pg_dump -h "${RDS_HOST}" -p "${RDS_PORT}" -U "${RDS_USER}" -bCc -d "${RDS_DATABASE}" sslmode=verify-full sslrootcert=eu-west-1-bundle.pem" 
                 # { pg_dump -h "${RDS_HOST}" -p "${RDS_PORT}" -U "${RDS_USER}" -bCc -d "${RDS_DATABASE}" sslmode=verify-full sslrootcert=eu-west-1-bundle.pem |\
