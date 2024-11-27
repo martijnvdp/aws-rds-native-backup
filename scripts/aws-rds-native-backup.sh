@@ -45,13 +45,13 @@ do
     echo "Getting tags from RDS cluster ${cluster}.."
     if [ "$(echo $clusters| yq '.DBClusters[] | select(.DBClusterIdentifier == "'${cluster}'")'| yq .TagList| yq '.[] | select(.Key=="'${BACKUP_TAG_KEY}'")|.Value')" == true ]; then
         echo "${cluster} has ${BACKUP_TAG_KEY} tag set to true"
-        RDS_HOST = $(echo $clusters| yq '.DBClusters[] | select(.DBClusterIdentifier == "'${cluster}'")'| yq .ReaderEndpoint)
-        RDS_ENGINE = $(echo $clusters| yq '.DBClusters[] | select(.DBClusterIdentifier == "'${cluster}'")'| yq .Engine)
+        RDS_HOST=$(echo $clusters| yq '.DBClusters[] | select(.DBClusterIdentifier == "'${cluster}'")'| yq .ReaderEndpoint)
+        RDS_ENGINE=$(echo $clusters| yq '.DBClusters[] | select(.DBClusterIdentifier == "'${cluster}'")'| yq .Engine)
         
         echo "get iam token for user ${RDS_USER} ..."
         export PGPASSWORD=$(aws rds generate-db-auth-token --hostname ${RDS_HOST} --port ${RDS_PORT} --username ${RDS_USER} --region ${REGION})
         
-        Databases = $( psql --username=$MYSQLUser  -h $RDSHost -c "select datname from pg_database" -d postgres --csv)
+        Databases=$( psql --username=$MYSQLUser  -h $RDSHost -c "select datname from pg_database" -d postgres --csv)
 
         for RSS_DATABASE in $Databases
         do
@@ -59,8 +59,9 @@ do
             echo "Using Filename: ${FILENAME}"
 
             if [ $RDS_ENGINE == "aurora-postgresql"]; then
-                RDS_PORT = "5432"
+                RDS_PORT="5432"
                 echo "Start dump.."
+                echo "pg_dump -h "${RDS_HOST}" -p "${RDS_PORT}" -U "${RDS_USER}" -bCc -d "${DATABASE}" sslmode=verify-full sslrootcert=eu-west-1-bundle.pem" 
                 # { pg_dump -h "${RDS_HOST}" -p "${RDS_PORT}" -U "${RDS_USER}" -bCc -d "${DATABASE}" sslmode=verify-full sslrootcert=eu-west-1-bundle.pem |\
                 # bzip2 |\
                 # aws s3 cp - "s3://$S3_BUCKET/$S3_PREFIX/${FILENAME}.sql.bz" --region=$S3_REGION; } 3>&1 | tr '\015' '\012'
