@@ -9,42 +9,30 @@ if [ -z "${BACKUP_TAG_KEY:-}" ]; then
 fi
 
 
-if [ -z "${REGION:-}" ]; then
+if [ -z "${AWS_REGION:-}" ]; then
   echo "REGION was not set"
-fi
-
-if [ -z "${RDS_DATABASE:-}" ]; then
-  echo "RDS_DATABASE was not set"
-fi
-
-if [ -z "${RDS_HOST:-}" ]; then
-  echo "RDS_HOST was not set"
-fi
-
-if [ -z "${RDS_PORT:-}" ]; then
-  echo "RDS_HOST was not set"
 fi
 
 if [ -z "${RDS_USER:-}" ]; then
   echo "RDS_HOST was not set"
 fi
 
-if [ -z "${S3_BUCKET:-}" ]; then
-  echo "S3_BUCKET was not set"
-fi
+# if [ -z "${S3_BUCKET:-}" ]; then
+#   echo "S3_BUCKET was not set"
+# fi
 
-if [ -z "${S3_BUCKET:-}" ]; then
-  echo "S3_BUCKET was not set"
-fi
+# if [ -z "${S3_BUCKET:-}" ]; then
+#   echo "S3_BUCKET was not set"
+# fi
 
-if [ -z "${S3_PREFIX:-}" ]; then
-  echo "S3_BUCKET was not set"
-fi
+# if [ -z "${S3_PREFIX:-}" ]; then
+#   echo "S3_BUCKET was not set"
+# fi
 
-if [ -z "${S3_REGION:-}" ]; then
-  echo "S3_BUCKET not set, using \$REGION ($REGION)"
-  S3_REGION=$REGION
-fi
+# if [ -z "${S3_REGION:-}" ]; then
+#   echo "S3_BUCKET not set, using \$REGION ($REGION)"
+#   S3_REGION=$REGION
+# fi
 
 echo "Printing Volume Information"
 df -h .
