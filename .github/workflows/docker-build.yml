@@ -1,0 +1,41 @@
+name: build_push_container
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  docker-slim-build-container:
+    name: Build and push container image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    steps:
+      - 
+        name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      -
+        name: Get Tag Name
+        id: tag_name
+        run: |
+          echo ::set-output name=SOURCE_TAG::${GITHUB_REF#refs/tags/}
+
+      - name: Login to ghcr.io
+        uses: docker/login-action@v2.2.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the Docker image
+        run: |
+          docker build --tag ghcr.io/martijnvdp/aws-rds-native-backup:$VERSION --tag ghcr.io/martijnvdp/aws-rds-native-backup:latest .
+          docker push ghcr.io/martijnvdp/aws-rds-native-backup --all-tags
+        shell: bash
+        env:
+          VERSION: ${{ steps.tag_name.outputs.SOURCE_TAG }}
